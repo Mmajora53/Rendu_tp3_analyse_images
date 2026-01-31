@@ -10,12 +10,16 @@ DOSSIER_SCRIPT = os.path.dirname(os.path.abspath(__file__))
 
 def meanFilter(img, k) :
     """
-    Docstring pour meanFilter
-    
-    :param image: Description
-    :param k: Description
+    Cette fonction applique un filtre moyenneur sur une image.
+    Cela consiste à remplacer chaque pixel de l'image par la moyenne des pixels dans une fenêtre glissante
+    de taille k*k et dont le centre est centré sur le pixel en cours de traitement.
+    Ce filtre permet de réduire le bruit et flouter une image.
+
+    Ici, on choisit de ne pas prendre en compte les pixels en dehors de bords de l'image dans nos calculs.
+
+    :param image: image d'entrée (couleur BGR ou niveaux de gris)
+    :param k: taille de la fenêtre (doit être un nb impair)
     """
-    #image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     #on passe l'image en niveaux de gris
     image = img.copy()
     if len(image.shape) == 3 :
@@ -23,7 +27,7 @@ def meanFilter(img, k) :
     height, width = image.shape #on récupère les dimensions de l'image
     res = np.zeros_like(image) #copie "vide" de l'image originale
 
-    k_central = k//2 #rayon pixel central, va servir au déplacement dans la fenêtre de convolution
+    k_central = k//2 #rayon du pixel central dans la fenêtre, va servir au déplacement dans la fenêtre de convolution
 
     #se déplace dans l'image
     for y in range(height) :
@@ -55,11 +59,12 @@ def meanFilter(img, k) :
 
 def convolution(img, kernel, normalize=True) :
     """
-    Docstring pour convolution
+    On applique une convolution sur une image en ayant choisit le noyau au préalable.
+    C'est une généralisation du filtre moyenneur. On suit donc le même principe que pour meanFilter.
     
-    :param img: Description
-    :param kernel: Description
-    :param normalize: Description
+    :param img: image d'entrée
+    :param kernel: matrice qui correspond au noyau de convolution
+    :param normalize: permet de savoir si on normalise ou non (divise par le nb de pixels scannés)
     """
     #image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     image = img.copy()
@@ -104,14 +109,17 @@ def convolution(img, kernel, normalize=True) :
 
 def edgeSobel(img) :
     """
-    Docstring pour edgeSobel
+    On utilise la méthode d Sobel pour calculer la norme du gradient
+    et ainsi détecter les contours d'une image.
+    On calcule les gradients selon x et y et on fait ensuite la somme
+    de leurs valeurs absolues. 
     
-    :param img: Description
+    :param img: image d'entrée
     """
     
-    #noyau par rapport à x
+    #noyau par rapport à x (dérivée selon x)
     dx_kernel = np.array([[-1,0,1], [-2,0,2], [-1,0,1]], dtype=np.float32)
-    #noyau oar rapport à y
+    #noyau oar rapport à y (dérivée selon y)
     dy_kernel = np.array([[1,2,1], [0,0,0], [-1,-2,-1]], dtype=np.float32)
 
     #calcul la première dérivée, par rapport à x
@@ -137,10 +145,12 @@ def edgeSobel(img) :
 
 def median(img, k) :
     """
-    Docstring pour median
+    Cette fonction applique le filtre médian sur une image.
+    Cela consiste à remplacer chaque pixel par la valeur médiane des pixels dans 
+    une fenêtre de taille k*k et dont le centre est centré sur le pixel traité.
     
-    :param img: Description
-    :param k: Description
+    :param img: image d'entrée
+    :param k: taille de la fenêtre
     """
     image = img.copy()
     if len(image.shape) == 3 :
@@ -180,7 +190,7 @@ def median(img, k) :
 ############# TESTS : #############
 
 
-
+# Test sur le filtre moyenneur
 image1 = cv2.imread(os.path.join(DOSSIER_SCRIPT,"camera_bruit_gaussien.png"))
 test_meanFilter = meanFilter(image1, 3)
 cv2.imshow("Mean filter",test_meanFilter)
@@ -190,9 +200,9 @@ cv2.destroyAllWindows()
 
 
 
-
+# Test sur la convolution
 image2 = cv2.imread(os.path.join(DOSSIER_SCRIPT,"cat.png"))
-
+#Différents kernels :
 laplacien = np.array([[0, 1, 0],
                    [1, -4, 1],
                    [0, 1, 0]], dtype=np.float32)
@@ -204,7 +214,7 @@ gaussian_5x5_sigma1 = np.array([
     [1,  4,  6,  4, 1]
 ], dtype=np.float32) / 256.0
 filtre_moyenneur = np.array(np.ones((3,3), dtype=np.float32))
-
+#test avec le filtre Laplacien
 test_conv = convolution(image2, laplacien)
 cv2.imshow("Convolution",test_conv)
 cv2.waitKey(0)
@@ -218,7 +228,7 @@ cv2.destroyAllWindows()
 
 
 
-
+# Test sur Sobel
 image3 = cv2.imread(os.path.join(DOSSIER_SCRIPT,"camera.png"))
 test_Sobel = edgeSobel(image3)
 cv2.imshow("Sobel",test_Sobel)
@@ -227,7 +237,7 @@ cv2.destroyAllWindows()
 
 
 
-
+# Test sur le filtre médian
 image5 = cv2.imread(os.path.join(DOSSIER_SCRIPT,"camera_bruit_poivre_et_sel.png"))
 test_median = median(image5, 3)
 cv2.imshow("Median",test_median)

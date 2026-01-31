@@ -10,20 +10,20 @@ DOSSIER_SCRIPT = os.path.dirname(os.path.abspath(__file__))
 
 def transpose(image) :
     """
-    Docstring pour transpose
+    On applique la transposée sur une image, donc on va échanger les lignes avec les colonnes.
     
-    :param image: Description
+    :param image: image d'entrée
     """
-    #if len(image.shape) == 3 :
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     height, width = image.shape
 
-    res = np.zeros((height, width), dtype=image.dtype)
+    #on inverse les dimensions
+    res = np.zeros((width, height), dtype=image.dtype)
 
     for y in range(height) :
         for x in range(width) :
-            res[y,x] = image[x,y] #on "inverse" les pixels
+            res[y,x] = image[x,y] #on "inverse" les pixels : on inverse les lignes et les colonnes
     
     return res
 
@@ -33,17 +33,15 @@ def transpose(image) :
 
 def interpolate_nearest(image, x,y) :
     """
-    Interpolation par plus proche voisin
-    img : tableau numpy (h, w) ou (h, w, c)
-    x, y : coordonnées réelles (float) dans le repère de l'image
-           (0,0) = coin haut-gauche
+    On effectue l'interpolation par plus proche voisin.
+    On prend en entrée les coordonnées d'un pixel et on retourne la valeur du pixel
+    le plus proche (en terme de coordonnées).
     
-    Retourne la valeur du pixel (scalaire ou tableau de 3 valeurs si couleur)
-    Si hors image → retourne 0 (noir)
+    On retourne la valeur du pixel. Si en dehors de l'image, on retourne 0 (noir)
     
-    :param image: Description
-    :param x: Description
-    :param y: Description
+    :param image: image d'entrée
+    :param x: coordonnée x du pixel qu'on veut traiter
+    :param y: coordonnée y du pixel qu'on veut traiter
     """
     height, width = image.shape[:2]
 
@@ -57,27 +55,20 @@ def interpolate_nearest(image, x,y) :
     return image[y_arr, x_arr]
 
 
-def expand(image, taille) :
+def expand(image, facteur) :
     """
-    Agrandit l'image par un facteur scale (ex: 2.5 → 2.5 fois plus large et haut)
+    Agrandit l'image par un facteur (ex: 3 = 3 fois plus large et haut)
     en utilisant l'interpolation nearest neighbor
     
-    Paramètres:
-        img    : image numpy (h, w) ou (h, w, 3)
-        scale  : float ≥ 1 (facteur d'agrandissement)
-    
-    Retourne : nouvelle image agrandie
-    
-    :param image: Description
-    :param taille: Description
+    :param image: image d'entrée
+    :param facteur: coeff d'agrandissement
     """
-
+    #on prend en entrée des images de couleurs ou grises
     height, width = image.shape[:2]
     #nouvelles dimensions
-    n_height = int(height*taille) 
-    n_width = int(width*taille)
+    n_height = int(height*facteur) 
+    n_width = int(width*facteur)
 
-    #res = np.zeros((n_height, n_width), dtype=image.dtype)
     if len(image.shape) == 2: #si une image en niveaux de gris
         res = np.zeros((n_height, n_width), dtype=image.dtype)
     else: #si une image en couleurs
@@ -86,8 +77,8 @@ def expand(image, taille) :
     #on parcours l'image
     for y in range(n_height) :
         for x in range(n_width) :
-            img_y = (y+0.5)/taille - 0.5 #on va calculer la position correspondant dans l'image originale
-            img_x = (x+0.5)/taille - 0.5
+            img_y = (y+0.5)/facteur - 0.5 #on va calculer la position correspondant dans l'image originale
+            img_x = (x+0.5)/facteur - 0.5
 
             res[y,x] = interpolate_nearest(image, img_x, img_y) #on applique l'inetrpolation par plus proche voisin
     
@@ -102,20 +93,11 @@ def expand(image, taille) :
 
 def interpolate_bilinear(image, x,y) :
     """
-    Interpolation bilinéaire d'un point (x, y) réel dans l'image.
+    Effectue l'interpolation bilinéaire d'un point de coordonnées (x, y).
     
-    Paramètres:
-        img : ndarray (h, w) ou (h, w, 3)
-        x, y : coordonnées réelles (float), origine en haut-gauche (0,0)
-    
-    Retourne:
-        - scalaire (niveaux de gris)
-        - ou tableau [B,G,R] (couleur)
-        - 0 (ou [0,0,0]) si hors de l'image
-    
-    :param image: Description
-    :param x: Description
-    :param y: Description
+    :param image: image d'entrée
+    :param x: coordonnée x du pixel qu'on veut traiter
+    :param y: coordonnée y du pixel qu'on veut traiter
     """
     height, width = image.shape[:2]
 
@@ -133,7 +115,7 @@ def interpolate_bilinear(image, x,y) :
     alpha = x-x0
     beta = y-y0
 
-    #on récupère les valeurs des pixels
+    #on récupère les valeurs des pixels voisins
     fy0x0 = image[y0, x0]
     fy0x1 = image[y0, x1]
     fy1x0 = image[y1, x0]
@@ -146,19 +128,20 @@ def interpolate_bilinear(image, x,y) :
 
 
 
-def expand_bilinear(image, taille) :
+def expand_bilinear(image, facteur) :
     """
-    Agrandit l'image avec interpolate_bilinear. On a repris expand et on l'a modifiée pour appliquer interpolate bilinear.
+    Agrandit l'image avec interpolate_bilinear. 
+    On a repris expand et on l'a modifiée pour appliquer interpolate bilinear.
     
-    :param image: Description
-    :param taille: Description
+    :param image: image d'entrée
+    :param facteur: coeff d'agrandissement
     """
 
     height, width = image.shape[:2]
 
     #nouvelles dimensions
-    n_height = int(height*taille) 
-    n_width = int(width*taille)
+    n_height = int(height*facteur) 
+    n_width = int(width*facteur)
 
     if len(image.shape) == 2:
         res = np.zeros((n_height, n_width), dtype=image.dtype) #pour une image en niveau de gris
@@ -167,8 +150,8 @@ def expand_bilinear(image, taille) :
 
     for y in range(n_height) :
         for x in range(n_width) :
-            img_y = (y+0.5)/taille - 0.5 #on va calculer la position correspondant dans l'image originale
-            img_x = (x+0.5)/taille - 0.5
+            img_y = (y+0.5)/facteur - 0.5 #on va calculer la position correspondant dans l'image originale
+            img_x = (x+0.5)/facteur - 0.5
 
             res[y,x] = interpolate_bilinear(image, img_x, img_y) #on applique interpolate_bilinear
     
@@ -183,19 +166,12 @@ def expand_bilinear(image, taille) :
 
 def rotate(image, angle, interpolation) :
     """
-    Rotation d'une image autour de son centre (ou d'un centre donné)
-    
-    Paramètres:
-        image          : ndarray (h,w) ou (h,w,3)
-        angle_deg      : angle en degrés (positif = sens anti-horaire)
-        interpolation  : 'nearest' ou 'bilinear' (utilise tes fonctions)
-        center         : tuple (cx, cy) optionnel ; par défaut = centre image
-    
-    Retourne : image rotatée (taille ajustée pour tout contenir)
-    
-    :param image: Description
-    :param angle: Description
-    :param interpolation: Description
+    Effectue la rotation d'une image autour de son centre. On donne en paramètre quel type
+    d'interpolation on veut utiliser.
+
+    :param image: image d'entrée
+    :param angle: angle de rotation
+    :param interpolation: "nearest" ou "bilinear", permet de choisir l'interpolation à utiliser
     """
     height, width = image.shape[:2]
     mh = height/2
@@ -209,8 +185,10 @@ def rotate(image, angle, interpolation) :
 
     for y in range(height):
         for x in range(width):
+            #coordonnées depuis le centre
             ny = y - mh
             nx = x - mw
+            #chercher les coordonnées du pixel source
             src_x = cos_angle * nx + sin_angle * ny + mw
             src_y = -sin_angle * nx + cos_angle * ny + mh
             
@@ -232,7 +210,7 @@ def rotate(image, angle, interpolation) :
 
 ############# TESTS : #############
 
-
+# Test de la transposition
 image1 = cv2.imread(os.path.join(DOSSIER_SCRIPT,"camera.png"))
 test_transpose = transpose(image1)
 cv2.imshow("Transpose :",test_transpose)
@@ -240,7 +218,7 @@ cv2.waitKey(0)
 cv2.destroyAllWindows()
 
 
-
+# Test de l'interpolation avec nearest neighbor
 image2 = cv2.imread(os.path.join(DOSSIER_SCRIPT,"cat.png"))
 test_expand = expand(image2, 3)
 cv2.imshow("Expand interpolate nearest :",test_expand)
@@ -248,7 +226,7 @@ cv2.waitKey(0)
 cv2.destroyAllWindows()
 
 
-
+# Test de l'interpolation bilinear
 image3 = cv2.imread(os.path.join(DOSSIER_SCRIPT,"cat.png"))
 test_expand_bili = expand_bilinear(image3, 3)
 cv2.imshow("Expand interpolate bilinear",test_expand_bili)
@@ -262,7 +240,7 @@ cv2.waitKey(0)
 cv2.destroyAllWindows()
 """
 
-
+# Test de la rotation
 image4 = cv2.imread(os.path.join(DOSSIER_SCRIPT,"camera.png"))
 test_rotate = rotate(image4, 45, "nearest")
 cv2.imshow("Rotate bilinear",test_rotate)
