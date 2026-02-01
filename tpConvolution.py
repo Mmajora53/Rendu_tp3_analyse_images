@@ -69,7 +69,7 @@ def convolution(img, kernel, normalize=True) :
     #image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     image = img.copy()
     if len(image.shape) == 3 :
-        image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     height, width = image.shape
     k_height, k_width = kernel.shape #on récupère les dimensions du noyau
     mkh, mkw = k_height//2, k_width//2 #va servir au déplacement dans la fenêtre du noyau

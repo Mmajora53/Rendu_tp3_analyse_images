@@ -243,7 +243,7 @@ cv2.destroyAllWindows()
 # Test de la rotation
 image4 = cv2.imread(os.path.join(DOSSIER_SCRIPT,"camera.png"))
 test_rotate = rotate(image4, 45, "nearest")
-cv2.imshow("Rotate bilinear",test_rotate)
+cv2.imshow("Rotate nearest",test_rotate)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
